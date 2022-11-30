@@ -1,1 +1,0 @@
-checkpath.pl pour verifier que le fichier normed est a la norme
