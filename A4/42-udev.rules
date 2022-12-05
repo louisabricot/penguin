@@ -1,0 +1,2 @@
+ACTION=="add", SUBSYSTEM=="usb", RUN+="/usr/sbin/insmod /home/corozco/Little-Penguin/A4/main.ko"
+ACTION=="remove", SUBSYSTEM=="usb", RUN+="/usr/sbin/rmmod /home/corozco/Little-Penguin/A4/main.ko"
