@@ -6,7 +6,7 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("lmalki-h");
 
 static int __init add_keyboard_init(void) {
- pr_info("USB keyboard connected!\n");
+ pr_info("USB keyboard connected! YOUHOU\n");
  return 0;
 }
 
