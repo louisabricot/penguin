@@ -1,0 +1,8 @@
+# Detection of USB keyboards
+SUBSYSTEM=="usb" \
+, ACTION=="add" \
+, ATTRS{bInterfaceClass}=="3" \
+, RUN+="/usr/sbin/insmod /root/penguin/A4/add_keyboard.ko" \
+, ACTION=="remove" \
+, RUN+="/usr/sbin/insmod /root/penguin/A4/rm_keyboard.ko" \
+
