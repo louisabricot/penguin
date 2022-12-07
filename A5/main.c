@@ -1,64 +1,71 @@
-#include <linux/fs.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/miscdevice.h>
-#include <linux/module.h>
+#include <linux/fs.h>
 
-static char *message = "login";
-static int message_length = 7;
-
-static ssize_t misc_read(struct file *filp, char __user *buf, size_t count,
-                        loff_t *f_pos)
-{
-        return simple_read_from_buffer(buf, count, f_pos, message,
-                                       strlen(message));
-}
-
-static ssize_t misc_write(struct file *filp, const char __user *buf,
-                            size_t count, loff_t *f_pos)
-{
-        char specified_msg[count];
-        ssize_t retval = -EINVAL;
-
-        if (count != message_length)
-                return retval;
-
-        retval = simple_write_to_buffer(specified_msg, count, f_pos, buf,
-                                        count);
-        if (retval < 0)
-                return retval;
-
-        retval = strncmp(message, specified_msg, count) ? -EINVAL : count;
-        return retval;
-}
-
-const struct file_operations misc_fops = {
-        .owner = THIS_MODULE,
-        .read = misc_read,
-        .write = misc_write,
-};
-
-static struct miscdevice mini_mics = {
-        .minor = MISC_DYNAMIC_MINOR,
-        .name = "fortytwo",
-        .fops = &misc_fops,
-};
-
-static int misc_init(void)
-{
-        pr_info("My minor number is: %i\n",
-                        mini_mics.minor);
-        return misc_register(&mini_mics);
-}
-
-static void misc_exit(void)
-{
-        pr_info("exit\n");
-        misc_deregister(&mini_mics);
-}
-
-module_init(misc_init);
-module_exit(misc_exit);
-
-MODULE_AUTHOR("login");
-MODULE_DESCRIPTION("mini misc driver.");
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("lmalki-h");
+
+#define LOGIN_LEN 8
+#define LOGIN "lmalki-h"
+#define DEVNAME "fortytwo"
+
+static ssize_t misc_read(struct file *filp,
+	char __user *user_buf,
+	size_t n,
+	loff_t *off)
+{
+	return simple_read_from_buffer(user_buf, n, off, LOGIN, LOGIN_LEN);
+}
+
+static ssize_t misc_write(struct file *filp,
+	const char __user *user_buf,
+	size_t n,
+	loff_t *off)
+{
+	char buffer[LOGIN_LEN];
+
+	if (n != LOGIN_LEN)
+		return -EINVAL;
+	
+	if (simple_write_to_buffer(buffer, LOGIN_LEN, off, user_buf, n) < 0)
+		return -EINVAL;
+
+	if (strncmp(LOGIN, buffer, LOGIN_LEN) == 0)
+		return LOGIN_LEN;
+	return -EINVAL;
+
+}
+
+static const struct file_operations fops = {
+	.owner = THIS_MODULE,
+	.write = misc_write,
+	.read  = misc_read,
+};
+
+static struct miscdevice miscdev = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = DEVNAME,
+	.fops = &fops,
+};
+
+static int misc_start(void)
+{ 
+	int error = misc_register(&miscdev);
+	if (error) {
+		pr_err("Error while registering\n");
+		return error;
+	}
+	pr_info("Loading misc module\n");
+	return 0;
+}
+
+static void misc_end(void)
+{
+	misc_deregister(&miscdev);
+	pr_info("Unloading misc module\n");
+}
+
+module_init(misc_start);
+module_exit(misc_end);
