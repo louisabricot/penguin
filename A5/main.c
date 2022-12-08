@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0 OR MIT
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -28,10 +30,8 @@ static ssize_t misc_write(struct file *filp,
 
 	if (n != LOGIN_LEN)
 		return -EINVAL;
-	
 	if (simple_write_to_buffer(buffer, LOGIN_LEN, off, user_buf, n) < 0)
 		return -EINVAL;
-
 	if (strncmp(LOGIN, buffer, LOGIN_LEN) == 0)
 		return LOGIN_LEN;
 	return -EINVAL;
@@ -51,8 +51,9 @@ static struct miscdevice miscdev = {
 };
 
 static int misc_start(void)
-{ 
+{
 	int error = misc_register(&miscdev);
+
 	if (error) {
 		pr_err("Error while registering\n");
 		return error;
