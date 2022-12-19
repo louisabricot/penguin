@@ -1,45 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0 OR MIT
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
-
 #include <linux/fs_struct.h>
 
-#define procfs_name "mymounts"
-static struct proc_dir_entry *proc_file;
+static struct	proc_dir_entry *mymounts;
+static char	*buffer;
+static int	len;
 
-ssize_t read_proc(struct file *filp, char *buf, size_t len, loff_t *offp )
+ssize_t listmounts(struct file *filp, char *user, size_t size, loff_t *off)
 {
-    struct dentry *curdentry;
+	struct dentry *curdentry;
 
-    list_for_each_entry(curdentry, &current->fs->root.mnt->mnt_root->d_subdirs, d_child)
-    {
-        if ( curdentry->d_flags & DCACHE_MOUNTED)
-            pr_info("%s is mounted", curdentry->d_name.name);
-    }
-    return 0;
+	len = 0;
+	memset(buffer, 0, PAGE_SIZE);
+	list_for_each_entry(curdentry, &current->fs->root.mnt->mnt_root->d_subdirs, d_child) {
+		if (curdentry->d_flags & DCACHE_MOUNTED) {
+			char raw_path[250];
+
+			len += sprintf(buffer + len, "%s\t%s\n", curdentry->d_name.name, dentry_path_raw(curdentry, raw_path, 250));
+		}
+	}
+	return simple_read_from_buffer(user, size, off, buffer, len);
 }
 
-static struct file_operations myops =
-{
+static const struct file_operations myops = {
 	.owner = THIS_MODULE,
-	.read = read_proc,
+	.read = listmounts,
 };
 
 static int __init proc_init(void)
 {
-	proc_file = proc_create(procfs_name, 0644, NULL,(const struct proc_ops *)&myops);
-	if (proc_file == NULL) {
-		remove_proc_entry(procfs_name, NULL);
-		pr_info("Error: could not initialize /proc/%s\n", procfs_name);
+	buffer = kmalloc(PAGE_SIZE, GFP_KERNEL);
+	mymounts = proc_create("mymounts", 0444, NULL, (const struct proc_ops *)&myops);
+	if (!mymounts) {
+		pr_err("Error: failed to create mymounts\n");
 		return -ENOMEM;
 	}
+	pr_info("File successfully created!\n");
 	return 0;
 }
 
 static void __exit proc_exit(void)
 {
-	remove_proc_entry(procfs_name, NULL);
+	kfree(buffer);
+	proc_remove(mymounts);
 	pr_info("Cleaning up module\n");
 }
 

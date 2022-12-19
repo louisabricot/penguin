@@ -11,7 +11,7 @@ void do_work(int *n)
 {
 	int i;
 
-	for (i = 0; i < n; ++i)
+	for (i = 0; i < *n; ++i)
 		udelay(10);
 
 	if (*n < 10)
