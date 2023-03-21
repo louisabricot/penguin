@@ -2,7 +2,7 @@
 VERSION = 6
 PATCHLEVEL = 1
 SUBLEVEL = 0
-EXTRAVERSION = -thor__kernel
+EXTRAVERSION = -thor_kernel
 NAME = Hurr durr I'ma ninja sloth
 
 # *DOCUMENTATION*
