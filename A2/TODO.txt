@@ -1,1 +1,0 @@
-Kernel boot log (dmesg) pour montrer qu'il s'appelle bien thor
