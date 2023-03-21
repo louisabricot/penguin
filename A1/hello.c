@@ -2,16 +2,16 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 
-MODULE_LICENSE(“GPL”);
-MODULE_AUTHOR(“lmalki-h”);
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("lmalki-h");
 
 static int __init hello_init(void) {
- pr_info(“Hello, World!\n”);
+ pr_info("Hello, World!\n");
  return 0;
 }
 
 static void __exit hello_exit(void) {
- pr_info(“Cleaning up module\n”);
+ pr_info("Cleaning up module\n");
 }
 
 module_init(hello_init);
