@@ -1,37 +1,57 @@
-#include <linux/kernel.h>
-#include <linux/proc_f.h>
+// SPDX-License-Identifier: GPL-2.0 OR MIT
+
+#include <linux/init.h>
 #include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/proc_fs.h>
+#include <linux/fs_struct.h>
 
 MODULE_AUTHOR("lmalki-h");
 MODULE_LICENSE("GPL");
 
-#define procfs_name "mymounts"
+static struct	proc_dir_entry *mymounts;
+static char	*buffer;
+static int	len;
 
-int  init_module()
+ssize_t listmounts(struct file *filp, char *user, size_t size, loff_t *off)
 {
-	proc_file = create_proc_entry(procfs_name, 0644, NULL);
+	struct dentry *curdentry;
 
-	if (proc_file == NULL) {
-		remove_proc_entry(procfs_name, &proc_root);
-		pr_info("Error: could not initialize /proc/%s\n", procfs_name);
+	len = 0;
+	memset(buffer, 0, PAGE_SIZE);
+	list_for_each_entry(curdentry, &current->fs->root.mnt->mnt_root->d_subdirs, d_child) {
+		if (curdentry->d_flags & DCACHE_MOUNTED) {
+			char raw_path[250];
+
+			len += sprintf(buffer + len, "%s\t%s\n", curdentry->d_name.name, dentry_path_raw(curdentry, raw_path, 250));
+		}
+	}
+	return simple_read_from_buffer(user, size, off, buffer, len);
+}
+
+static const struct file_operations myops = {
+	.owner = THIS_MODULE,
+	.read = listmounts,
+};
+
+static int __init proc_init(void)
+{
+	buffer = kmalloc(PAGE_SIZE, GFP_KERNEL);
+	mymounts = proc_create("mymounts", 0444, NULL, (const struct proc_ops *)&myops);
+	if (!mymounts) {
+		pr_err("Error: failed to create mymounts\n");
 		return -ENOMEM;
 	}
-
-	proc_file->read_proc = procfile_read;
-	proc_file->owner = THIS_MODULE;
-	proc_file->mode = S_IFREG | S_IRUGO;
-	proc_file->uid = 0;
-	proc_file->gid = 0;
-	proc_file->size = 37;
-
-	pr_info("/proc/%s created\n");
+	pr_info("File successfully created!\n");
 	return 0;
 }
-void cleanup_module()
+
+static void __exit proc_exit(void)
 {
-	remove_mymounts_entry(procfs_name, &proc_root);
-	pr_info("/proc/%s removed", procfs_name);
+	kfree(buffer);
+	proc_remove(mymounts);
+	pr_info("Cleaning up module\n");
 }
+
 module_init(proc_init);
 module_exit(proc_exit);
-

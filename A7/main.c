@@ -102,11 +102,14 @@ static void debugfs_end(void)
 
 static int debugfs_start(void)
 {
+	umode_t id_mode;
+
+	id_mode = 0666;
 	pr_info("Loading debugfs module\n");
 	mutex_init(&foo_mutex);
 	data_len = 0;
 	dir = debugfs_create_dir("fortytwo", NULL);
-	id = debugfs_create_file("id", 0666, dir, NULL, &idfops);
+	id = debugfs_create_file("id", id_mode, dir, NULL, &idfops);
 	foo = debugfs_create_file("foo", 0644, dir, NULL, &foofops);
 	debugfs_create_ulong("jiffies", 0444, dir, (unsigned long *)&jiffies);
 	return 0;
